@@ -431,13 +431,13 @@
                         <strong>Program Coordinator</strong><small>Formation & Intake</small>
                     </div>
                     <div class="role-option" onclick="adminLogout()" style="color:#e74c3c;border-top:2px solid #f0f0f0;cursor:pointer;">
-                        <strong style="color:#e74c3c;">&#128682; Sign Out</strong><small>Return to login page</small>
-                    </div>
+    <strong style="color:#e74c3c;">&#128682; Sign Out</strong><small>Return to login page</small>
+                </div>
                 </div>
             </div>
             <button onclick="adminLogout()" style="background:rgba(231,76,60,.1);border:1px solid rgba(231,76,60,.3);color:#e74c3c;padding:7px 14px;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:700;cursor:pointer;">
-                &#128682; Logout
-            </button>
+    &#128682; Logout
+        </button>    
         </div>
     </header>
 
@@ -1673,10 +1673,11 @@ function deleteApp(id) {
     loadAllData();
 }
 
+// Change this function in your script area:
 function adminLogout() {
-    if (confirm('Sign out of the admin dashboard?')) {
-        sessionStorage.removeItem('mefamdev_session');
-        window.location.href = 'index.html';
+    // ... any code that clears session states or local storage ...
+    window.location.href = "index.html"; 
+}
     }
 }
 
