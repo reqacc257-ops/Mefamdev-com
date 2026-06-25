@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEFAMDEV – Login</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --navy: #1a2e44;
+            --navy2: #243b55;
+            --navy3: #0f1e2e;
+            --gold: #f5a623;
+            --gold2: #ffc55a;
+            --teal: #1abc9c;
+            --red: #e74c3c;
+            --green: #27ae60;
+            --white: #ffffff;
+            --text: #2c3e50;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--navy3);
+            color: var(--white);
+            display: flex;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ─── Left panel ─── */
+        .left-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 48px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* animated background blobs */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: .18;
+            animation: drift 12s ease-in-out infinite alternate;
+        }
+        .blob-1 { width: 420px; height: 420px; background: var(--gold); top: -80px; left: -100px; animation-duration: 14s; }
+        .blob-2 { width: 300px; height: 300px; background: var(--teal); bottom: 20px; right: -60px; animation-duration: 10s; animation-delay: -4s; }
+        .blob-3 { width: 200px; height: 200px; background: #8e44ad; top: 50%; left: 60%; animation-duration: 16s; animation-delay: -8s; }
+        @keyframes drift { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,40px) scale(1.12); } }
+
+        .left-content { position: relative; z-index: 2; text-align: center; max-width: 420px; }
+
+        .brand-logo {
+            width: 90px; height: 90px;
+            background: rgba(255,255,255,.08);
+            border: 2px solid rgba(245,166,35,.4);
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; margin: 0 auto 24px;
+            backdrop-filter: blur(8px);
+        }
+        .brand-logo img { height: 64px; object-fit: contain; filter: brightness(1.2); }
+        .brand-logo .logo-fallback {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2rem; color: var(--gold);
+            font-style: italic;
+        }
+
+        .left-content h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.2rem; color: #fff;
+            line-height: 1.2; margin-bottom: 10px;
+        }
+        .left-content h1 em { color: var(--gold); font-style: normal; }
+        .left-content .tagline {
+            font-size: .9rem; color: rgba(255,255,255,.55);
+            line-height: 1.7; margin-bottom: 32px;
+        }
+
+        /* feature pills */
+        .feature-list { display: flex; flex-direction: column; gap: 10px; text-align: left; }
+        .feature-item {
+            display: flex; align-items: center; gap: 12px;
+            background: rgba(255,255,255,.05);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 10px; padding: 11px 16px;
+            font-size: .85rem; color: rgba(255,255,255,.75);
+            backdrop-filter: blur(4px);
+        }
+        .feature-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+        /* ─── Right panel ─── */
+        .right-panel {
+            width: 460px; flex-shrink: 0;
+            background: var(--white);
+            display: flex; flex-direction: column;
+            justify-content: center;
+            padding: 48px 44px;
+            box-shadow: -20px 0 60px rgba(0,0,0,.3);
+            position: relative; overflow-y: auto;
+        }
+
+        .login-header { margin-bottom: 32px; }
+        .login-header .welcome { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--gold); margin-bottom: 6px; }
+        .login-header h2 { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: var(--navy); margin-bottom: 6px; }
+        .login-header p { font-size: .87rem; color: #888; }
+
+        /* Tab switch */
+        .portal-tabs {
+            display: flex; background: #f0f2f6; border-radius: 10px;
+            padding: 4px; gap: 4px; margin-bottom: 28px;
+        }
+        .ptab {
+            flex: 1; padding: 10px; border: none; border-radius: 7px;
+            font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600;
+            cursor: pointer; background: transparent; color: #888; transition: .2s;
+        }
+        .ptab.active { background: var(--navy); color: #fff; box-shadow: 0 2px 8px rgba(26,46,68,.25); }
+
+        /* Form */
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block; font-size: .75rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em;
+            color: #555; margin-bottom: 6px;
+        }
+        .input-wrap { position: relative; }
+        .input-icon {
+            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+            font-size: .95rem; color: #aaa; pointer-events: none;
+        }
+        input[type="text"], input[type="password"], input[type="email"], select {
+            width: 100%; padding: 11px 13px 11px 38px;
+            border: 1.5px solid #e0e3ea; border-radius: 8px;
+            font-family: 'DM Sans', sans-serif; font-size: .93rem;
+            color: var(--text); background: #fff; transition: border .2s, box-shadow .2s;
+        }
+        select { padding-left: 38px; }
+        input:focus, select:focus {
+            outline: none; border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(245,166,35,.2);
+        }
+
+        /* Role selector cards */
+        .role-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+        .role-card {
+            border: 2px solid #e8eaef; border-radius: 9px; padding: 12px 10px;
+            cursor: pointer; transition: .15s; text-align: center;
+            position: relative;
+        }
+        .role-card:hover { border-color: var(--gold); background: #fffbf2; }
+        .role-card.selected { border-color: var(--navy); background: #f0f4ff; }
+        .role-card input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+        .role-card .rc-icon { font-size: 1.5rem; margin-bottom: 4px; }
+        .role-card .rc-name { font-size: .78rem; font-weight: 700; color: var(--navy); }
+        .role-card .rc-sub { font-size: .68rem; color: #999; margin-top: 1px; }
+        .role-card.selected::after {
+            content: '✓'; position: absolute; top: 5px; right: 8px;
+            font-size: .7rem; color: var(--navy); font-weight: 700;
+        }
+
+        /* Submit */
+        .btn-login {
+            width: 100%; padding: 13px;
+            background: var(--navy); color: #fff; border: none;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: 1rem; font-weight: 700; cursor: pointer;
+            transition: .2s; display: flex; align-items: center;
+            justify-content: center; gap: 8px; margin-top: 4px;
+        }
+        .btn-login:hover { background: var(--navy2); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(26,46,68,.3); }
+        .btn-login:active { transform: none; }
+
+        /* Divider */
+        .divider {
+            display: flex; align-items: center; gap: 12px;
+            color: #bbb; font-size: .78rem; margin: 20px 0;
+        }
+        .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: #e8eaef; }
+
+        .btn-applicant {
+            width: 100%; padding: 13px;
+            background: var(--gold); color: var(--navy); border: none;
+            border-radius: 8px; font-family: 'DM Sans', sans-serif;
+            font-size: .93rem; font-weight: 700; cursor: pointer;
+            transition: .2s; display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+        }
+        .btn-applicant:hover { background: #e09520; }
+
+        /* Error */
+        .error-banner {
+            background: #fdedeb; border: 1px solid #f5b7b1;
+            border-radius: 7px; padding: 10px 14px;
+            font-size: .85rem; color: #c0392b; margin-bottom: 16px;
+            display: none; align-items: center; gap: 8px;
+        }
+        .error-banner.show { display: flex; }
+
+        /* Demo hint */
+        .demo-hint {
+            background: #f7f9ff; border: 1px solid #d0d8f0;
+            border-radius: 8px; padding: 12px 14px; margin-top: 20px;
+        }
+        .demo-hint p { font-size: .77rem; color: #666; line-height: 1.7; }
+        .demo-hint strong { color: var(--navy); }
+
+        .footer-note { font-size: .75rem; color: #bbb; text-align: center; margin-top: 24px; }
+
+        /* Panel state toggle */
+        .panel-admin { display: block; }
+        .panel-applicant { display: none; }
+
+        /* Loading screen */
+        .loading-screen {
+            display: none; position: fixed; inset: 0;
+            background: var(--navy); z-index: 9999;
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 16px;
+        }
+        .loading-screen.show { display: flex; }
+        .spinner {
+            width: 48px; height: 48px; border: 4px solid rgba(255,255,255,.15);
+            border-top-color: var(--gold); border-radius: 50%;
+            animation: spin .8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-screen p { color: rgba(255,255,255,.7); font-size: .9rem; }
+
+        @media (max-width: 800px) {
+            body { flex-direction: column; overflow-y: auto; }
+            .left-panel { padding: 40px 24px 30px; min-height: 260px; }
+            .left-content h1 { font-size: 1.6rem; }
+            .feature-list { display: none; }
+            .right-panel { width: 100%; padding: 36px 24px 48px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Loading screen -->
+<div class="loading-screen" id="loadingScreen">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Signing in…</p>
+</div>
+
+<!-- Left decorative panel -->
+<div class="left-panel">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="left-content">
+        <div class="brand-logo">
+            <img src="mefamdev_no_bg.png" alt="MEFAMDEV" onerror="this.parentElement.innerHTML='<span class=logo-fallback>M</span>'">
+        </div>
+        <h1>MEFAMDEV<br><em>Life System</em></h1>
+        <p class="tagline">
+            Fr. Marie Eugene Family Development Foundation, Inc.<br>
+            Angat, Bulacan Chapter — Scholarship Management Portal
+        </p>
+        <div class="feature-list">
+            <div class="feature-item"><span class="feature-icon">📊</span> Dashboard with real-time analytics</div>
+            <div class="feature-item"><span class="feature-icon">🎓</span> Scholar profiles and grade tracking</div>
+            <div class="feature-item"><span class="feature-icon">📋</span> Intake sheets and staff assessments</div>
+            <div class="feature-item"><span class="feature-icon">👨‍👩‍👧</span> Applicant portal and status tracking</div>
+        </div>
+    </div>
+</div>
+
+<!-- Right login panel -->
+<div class="right-panel">
+
+    <div class="login-header">
+        <div class="welcome">Welcome Back</div>
+        <h2>Sign in to your portal</h2>
+        <p id="loginSubtitle">Enter your username or APP reference number</p>
+    </div>
+
+    <!-- Detected role pill (shown once username is recognised) -->
+    <div id="detectedRole" style="display:none; margin-bottom:18px;">
+        <div id="detectedRolePill" style="
+            display:inline-flex; align-items:center; gap:8px;
+            padding:8px 16px; border-radius:20px;
+            font-size:.82rem; font-weight:700;
+            background:#e8f5e9; color:#1b5e20;
+            border:1px solid #a5d6a7;
+            transition: all .2s;
+        "></div>
+    </div>
+
+    <!-- Error banner (shared) -->
+    <div class="error-banner" id="loginError">
+        <span>⚠️</span> <span id="loginErrorMsg">Invalid credentials. Please try again.</span>
+    </div>
+
+    <!-- ── STEP 1: Username / Reference ── -->
+    <div id="step1">
+        <div class="form-group">
+            <label id="usernameLabel">Username or Reference Number</label>
+            <div class="input-wrap">
+                <span class="input-icon" id="usernameIcon">👤</span>
+                <input type="text" id="unifiedUsername"
+                    placeholder="e.g. director  or  APP-1001"
+                    autocomplete="username"
+                    oninput="onUsernameInput(this.value)"
+                    onkeydown="if(event.key==='Enter') proceedLogin()">
+            </div>
+            <p id="usernameHint" style="font-size:.74rem; color:#aaa; margin-top:5px;"></p>
+        </div>
+
+        <!-- Step 2a: Staff password (shown when staff username detected) -->
+        <div id="staffPasswordField" style="display:none;">
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrap">
+                    <span class="input-icon">🔒</span>
+                    <input type="password" id="unifiedPassword"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        onkeydown="if(event.key==='Enter') proceedLogin()">
+                </div>
+                <p style="font-size:.74rem; color:#bbb; margin-top:5px; text-align:right; cursor:pointer;">
+                    Forgot password? Contact director.
+                </p>
+            </div>
+        </div>
+
+        <!-- Step 2b: Applicant name verification (shown when APP- detected) -->
+        <div id="applicantNameField" style="display:none;">
+            <div class="form-group">
+                <label>Full Name (for verification)</label>
+                <div class="input-wrap">
+                    <span class="input-icon">📋</span>
+                    <input type="text" id="unifiedName"
+                        placeholder="As submitted in your application"
+                        onkeydown="if(event.key==='Enter') proceedLogin()">
+                </div>
+            </div>
+        </div>
+
+        <button class="btn-login" id="loginBtn" onclick="proceedLogin()">
+            Continue →
+        </button>
+    </div>
+
+    <div class="divider">or</div>
+
+    <button class="btn-applicant" onclick="window.location.href='application_form.html'">
+        📝 Submit New Application
+    </button>
+
+    <!-- Hint box — switches content based on detected type -->
+    <div class="demo-hint" style="margin-top:20px;">
+        <div id="hintStaff">
+            <p>
+                <strong>Staff Demo Accounts:</strong><br>
+                👑 <code>director</code> / <code>director123</code> — Full Access<br>
+                🎓 <code>edu</code> / <code>edu123</code> — Education Staff<br>
+                💰 <code>finance</code> / <code>finance123</code> — Finance Officer<br>
+                📋 <code>program</code> / <code>program123</code> — Program Coordinator
+            </p>
+        </div>
+        <div id="hintApplicant" style="display:none;">
+            <p>
+                <strong>Applicant access:</strong><br>
+                Your reference number is <code>APP-</code> followed by your application ID.<br>
+                Example: <code>APP-1001</code>, <code>APP-1002</code><br>
+                <em>You received this after submitting your application.</em>
+            </p>
+        </div>
+    </div>
+
+    <p class="footer-note">© 2026 MEFAMDEV-Life · Angat, Bulacan · Data Privacy Act RA 10173</p>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   STAFF ACCOUNTS
+══════════════════════════════════════ */
+const STAFF_ACCOUNTS = [
+    { username: 'director', password: 'director123', role: 'director', name: 'Director',      title: 'Primary Social Worker',   initials: 'DR' },
+    { username: 'edu',      password: 'edu123',      role: 'edu',      name: 'Edu Staff',     title: 'Education Social Worker', initials: 'ED' },
+    { username: 'finance',  password: 'finance123',  role: 'finance',  name: 'Finance Staff', title: 'Finance Officer',         initials: 'FN' },
+    { username: 'program',  password: 'program123',  role: 'program',  name: 'Coordinator',   title: 'Program Coordinator',     initials: 'PC' },
+];
+
+const STAFF_USERNAMES = STAFF_ACCOUNTS.map(a => a.username);
+
+/* ══════════════════════════════════════
+   SMART USERNAME DETECTION
+══════════════════════════════════════ */
+let detectedType = null; // 'staff' | 'applicant' | null
+
+function onUsernameInput(val) {
+    const v = val.trim().toLowerCase();
+    hideError();
+
+    // Reset
+    document.getElementById('staffPasswordField').style.display  = 'none';
+    document.getElementById('applicantNameField').style.display  = 'none';
+    document.getElementById('detectedRole').style.display        = 'none';
+    document.getElementById('hintStaff').style.display           = 'block';
+    document.getElementById('hintApplicant').style.display       = 'none';
+    document.getElementById('loginBtn').textContent              = 'Continue →';
+    document.getElementById('loginBtn').style.background         = 'var(--navy)';
+    detectedType = null;
+
+    if (!v) return;
+
+    // ── Detect applicant: starts with "app-" or is purely numeric
+    const isAppRef = /^app-/i.test(val.trim()) || /^\d+$/.test(v);
+
+    // ── Detect staff: exact username match
+    const isStaff = STAFF_USERNAMES.includes(v);
+
+    if (isStaff) {
+        detectedType = 'staff';
+        const acc = STAFF_ACCOUNTS.find(a => a.username === v);
+        showDetected('🏛 Staff — ' + acc.title, '#e3f0ff', '#1a3a6e', '#90b8f8');
+        document.getElementById('staffPasswordField').style.display = 'block';
+        document.getElementById('loginBtn').textContent  = 'Sign In to Admin Dashboard →';
+        document.getElementById('loginBtn').style.background = 'var(--navy)';
+        document.getElementById('hintStaff').style.display = 'block';
+        document.getElementById('hintApplicant').style.display = 'none';
+        document.getElementById('unifiedPassword').focus();
+
+    } else if (isAppRef) {
+        detectedType = 'applicant';
+        const cleanId = val.trim().replace(/^app-/i, '');
+        const apps = JSON.parse(localStorage.getItem('mefamdev_apps') || '[]');
+        const found = apps.find(a => String(a.id) === cleanId);
+
+        if (found) {
+            showDetected('📋 Applicant — APP-' + found.id, '#e8f5e9', '#1b5e20', '#81c784');
+            document.getElementById('usernameHint').textContent = '✓ Application found: ' + found.name;
+            document.getElementById('usernameHint').style.color = '#27ae60';
+        } else {
+            showDetected('📋 Applicant Reference', '#fff8e1', '#6d4c00', '#ffd54f');
+            document.getElementById('usernameHint').textContent = '';
+        }
+        document.getElementById('applicantNameField').style.display = 'block';
+        document.getElementById('loginBtn').textContent  = 'Track My Application →';
+        document.getElementById('loginBtn').style.background = 'var(--teal)';
+        document.getElementById('hintStaff').style.display = 'none';
+        document.getElementById('hintApplicant').style.display = 'block';
+        document.getElementById('unifiedName').focus();
+    }
+}
+
+function showDetected(label, bg, color, border) {
+    const pill = document.getElementById('detectedRolePill');
+    pill.textContent = label;
+    pill.style.background = bg;
+    pill.style.color = color;
+    pill.style.borderColor = border;
+    document.getElementById('detectedRole').style.display = 'block';
+}
+
+/* ══════════════════════════════════════
+   UNIFIED LOGIN HANDLER
+══════════════════════════════════════ */
+function proceedLogin() {
+    const raw = document.getElementById('unifiedUsername').value.trim();
+    hideError();
+
+    if (!raw) {
+        showError('Please enter your username or APP reference number.');
+        return;
+    }
+
+    if (detectedType === 'staff') {
+        doStaffLogin(raw.toLowerCase());
+    } else if (detectedType === 'applicant') {
+        doApplicantLogin(raw);
+    } else {
+        // Final fallback: check if it's a staff username or app ref
+        const v = raw.toLowerCase();
+        if (STAFF_USERNAMES.includes(v)) {
+            detectedType = 'staff';
+            document.getElementById('staffPasswordField').style.display = 'block';
+            document.getElementById('unifiedPassword').focus();
+            showError('Please enter your password to continue.');
+        } else {
+            showError('Username not recognised. Enter a staff username (e.g. "director") or an APP reference (e.g. "APP-1001").');
+        }
+    }
+}
+
+function doStaffLogin(username) {
+    const pass = document.getElementById('unifiedPassword').value;
+    if (!pass) {
+        document.getElementById('staffPasswordField').style.display = 'block';
+        document.getElementById('unifiedPassword').focus();
+        showError('Please enter your password.');
+        return;
+    }
+    const account = STAFF_ACCOUNTS.find(a => a.username === username && a.password === pass);
+    if (!account) {
+        showError('Wrong password. Please try again.');
+        document.getElementById('unifiedPassword').value = '';
+        document.getElementById('unifiedPassword').focus();
+        return;
+    }
+    sessionStorage.setItem('mefamdev_session', JSON.stringify({
+        type: 'staff', role: account.role, name: account.name,
+        title: account.title, initials: account.initials, loginTime: Date.now()
+    }));
+    showLoading('Signing in as ' + account.name + '…', () => {
+        window.location.href = 'admin_dashboard.html';
+    });
+}
+
+function doApplicantLogin(ref) {
+    const nameInput = document.getElementById('unifiedName').value.trim().toLowerCase();
+    const apps = JSON.parse(localStorage.getItem('mefamdev_apps') || '[]');
+    const cleanId = ref.replace(/^app-/i, '').trim();
+    let found = apps.find(a => String(a.id) === cleanId);
+
+    if (!found && nameInput.length > 2) {
+        found = apps.find(a => a.name && a.name.toLowerCase().includes(nameInput));
+    }
+    if (!found) {
+        showError('No application found with that reference number. Double-check and try again.');
+        return;
+    }
+    // Name verification (lenient)
+    if (nameInput && found.name) {
+        const fn = found.name.toLowerCase();
+        const parts = fn.split(/[\s,]+/);
+        const match = parts.some(p => p && nameInput.includes(p)) || fn.includes(nameInput);
+        if (!match) {
+            showError('Name does not match the application on file. Please check and try again.');
+            return;
+        }
+    }
+    sessionStorage.setItem('mefamdev_session', JSON.stringify({
+        type: 'applicant', appId: found.id, name: found.name, loginTime: Date.now()
+    }));
+    showLoading('Welcome, ' + found.name.split(',')[0] + '!', () => {
+        window.location.href = 'applicant_portal.html';
+    });
+}
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+function showError(msg) {
+    document.getElementById('loginError').classList.add('show');
+    document.getElementById('loginErrorMsg').textContent = msg;
+}
+function hideError() {
+    document.getElementById('loginError').classList.remove('show');
+}
+
+function showLoading(msg, callback) {
+    document.getElementById('loadingMsg').innerText = msg;
+    document.getElementById('loadingScreen').classList.add('show');
+    setTimeout(callback, 1200);
+}
+
+/* ── Auto-redirect if already logged in ── */
+window.onload = function () {
+    const session = sessionStorage.getItem('mefamdev_session');
+    if (session) {
+        try {
+            const s = JSON.parse(session);
+            if (Date.now() - s.loginTime < 8 * 60 * 60 * 1000) {
+                if (s.type === 'staff') window.location.href = 'admin_dashboard.html';
+                else window.location.href = 'applicant_portal.html';
+            }
+        } catch(e) { sessionStorage.removeItem('mefamdev_session'); }
+    }
+};
+</script>
+</body>
+</html>
