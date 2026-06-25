@@ -416,11 +416,11 @@ let linkedAppId = null;
 window.onload = function () {
         // Session guard — staff only
         const _raw = sessionStorage.getItem('mefamdev_session');
-        if (!_raw) { window.location.href = 'login.html'; return; }
+        if (!_raw) { window.location.href = 'index.html'; return; }
         try {
             const _s = JSON.parse(_raw);
-            if (_s.type !== 'staff') { window.location.href = 'login.html'; return; }
-        } catch(e) { window.location.href = 'login.html'; return; }
+            if (_s.type !== 'staff') { window.location.href = 'index.html'; return; }
+        } catch(e) { window.location.href = 'index.html'; return; }
 
     document.getElementById('caseDate').value = new Date().toISOString().split('T')[0];
     initFamTable();
