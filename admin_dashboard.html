@@ -1217,10 +1217,10 @@ if (!localStorage.getItem('mefamdev_families')) {
 document.addEventListener('DOMContentLoaded', () => {
     // ── Session Guard ──
     const raw = sessionStorage.getItem('mefamdev_session');
-    if (!raw) { window.location.href = 'login.html'; return; }
+    if (!raw) { window.location.href = 'index.html'; return; }
     let session;
-    try { session = JSON.parse(raw); } catch(e) { window.location.href = 'login.html'; return; }
-    if (session.type !== 'staff') { window.location.href = 'login.html'; return; }
+    try { session = JSON.parse(raw); } catch(e) { window.location.href = 'index.html'; return; }
+    if (session.type !== 'staff') { window.location.href = 'index.html'; return; }
 
     // ── Load session into UI ──
     currentRole = session.role || 'director';
@@ -1676,7 +1676,7 @@ function deleteApp(id) {
 function adminLogout() {
     if (confirm('Sign out of the admin dashboard?')) {
         sessionStorage.removeItem('mefamdev_session');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 }
 
