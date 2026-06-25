@@ -245,7 +245,7 @@
         <div class="nf-icon">🔒</div>
         <h2>No Active Session</h2>
         <p>Please log in to access your applicant portal.</p>
-        <a href="login.html" class="btn btn-navy">← Go to Login</a>
+        <a href="index.html" class="btn btn-navy">← Go to Login</a>
     </div>
 
     <!-- Main portal content (shown when session found) -->
@@ -533,7 +533,7 @@ function renderAnnouncements() {
 function logout() {
     if (confirm('Sign out of your applicant portal?')) {
         sessionStorage.removeItem('mefamdev_session');
-        window.location.href = 'login.html';
+        window.location.href = 'index.html';
     }
 }
 </script>
