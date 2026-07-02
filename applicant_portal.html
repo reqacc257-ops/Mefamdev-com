@@ -371,6 +371,18 @@
 </div><!-- /main -->
 
 <script>
+window.addEventListener('storage', function (e) {
+    if (e.key !== 'mefamdev_apps' && e.key !== 'mefamdev_announcements') return;
+    const raw = sessionStorage.getItem('mefamdev_session');
+    if (!raw) return;
+    let session;
+    try { session = JSON.parse(raw); } catch (err) { return; }
+    if (session.type !== 'applicant' || !session.appId) return;
+    const apps = JSON.parse(localStorage.getItem('mefamdev_apps') || '[]');
+    const app = apps.find(a => a.id === session.appId || String(a.id) === String(session.appId));
+    if (app) renderPortal(app, session);
+});
+
 /* ── Session check ── */
 window.onload = function () {
     // Support admin preview: admin passes a temporary session via localStorage
@@ -496,6 +508,20 @@ function buildTimeline(app) {
     const events = [
         { title: '📝 Application Submitted', date: app.date || 'Date not recorded', color: '#3498db', note: `S.Y. ${app.sy || '—'} · ${app.grade} at ${app.school}` }
     ];
+    if (app.statusHistory?.length) {
+        app.statusHistory.forEach(item => {
+            const title = item.status === 'Accepted'
+                ? '🎓 Application Accepted'
+                : item.status === 'Rejected'
+                    ? '❌ Application Rejected'
+                    : '🔄 Status Updated';
+            const color = item.status === 'Accepted' ? '#27ae60' : item.status === 'Rejected' ? '#e74c3c' : '#f5a623';
+            const date = item.changedAt ? new Date(item.changedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Updated';
+            events.push({ title, date, color, note: item.note || `Your application status was updated to ${item.status}.` });
+        });
+    } else if (app.status === 'Pending Review') {
+        events.push({ title: '⏳ Awaiting Staff Review', date: 'In queue', color: '#bbb', note: 'Your application is in the review queue. Please wait for further communication.' });
+    }
     if (app.status === 'Interviewing' || app.status === 'Accepted') {
         events.push({ title: '🔍 Application Under Review', date: 'Pending', color: '#e67e22', note: 'Your application has been received and is being reviewed by staff.' });
         events.push({ title: '🗣️ Interview / Document Verification', date: 'Scheduled', color: '#f5a623', note: 'Please prepare all required documents. You will be contacted for scheduling.' });
@@ -503,8 +529,8 @@ function buildTimeline(app) {
     if (app.status === 'Accepted') {
         events.push({ title: '🎓 Accepted as MEFAMDEV Scholar!', date: 'Confirmed', color: '#27ae60', note: 'Congratulations! Welcome to the MEFAMDEV family. Attend the orientation for next steps.' });
     }
-    if (app.status === 'Pending Review') {
-        events.push({ title: '⏳ Awaiting Staff Review', date: 'In queue', color: '#bbb', note: 'Your application is in the review queue. Please wait for further communication.' });
+    if (app.status === 'Rejected') {
+        events.push({ title: '❌ Application Not Accepted', date: 'Decision made', color: '#e74c3c', note: 'The application was not accepted at this time. Please contact MEFAMDEV for next steps.' });
     }
     return events;
 }
