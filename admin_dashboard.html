@@ -453,7 +453,7 @@
             <div class="stats-grid" data-roles="director">
                 <div class="stat-card" data-icon="🏠" style="border-color:#1abc9c;">
                     <div class="stat-label">Beneficiary Families</div>
-                    <div class="stat-value">214</div>
+                    <div class="stat-value" id="dash-families">0</div>
                     <div class="stat-sub">Angat, Bulacan</div>
                 </div>
                 <div class="stat-card" data-icon="🎓" style="border-color:#3498db;">
@@ -468,30 +468,30 @@
                 </div>
                 <div class="stat-card" data-icon="💰" style="border-color:#8e44ad;">
                     <div class="stat-label">Budget Remaining</div>
-                    <div class="stat-value">₱750k</div>
-                    <div class="stat-sub">Q3 Allocation</div>
+                    <div class="stat-value" id="dash-balance">₱0</div>
+                    <div class="stat-sub">Current fund balance</div>
                 </div>
             </div>
 
             <!-- Edu stats -->
             <div class="stats-grid" data-roles="edu">
                 <div class="stat-card" data-icon="🎓" style="border-color:#3498db;"><div class="stat-label">Active Scholars</div><div class="stat-value" id="edu-scholars">0</div></div>
-                <div class="stat-card" data-icon="⚠️" style="border-color:#e74c3c;"><div class="stat-label">Grade Alerts</div><div class="stat-value">8</div><div class="stat-sub">Below 80 avg.</div></div>
-                <div class="stat-card" data-icon="📋" style="border-color:#27ae60;"><div class="stat-label">Report Cards In</div><div class="stat-value">62/75</div></div>
+                <div class="stat-card" data-icon="⚠️" style="border-color:#e74c3c;"><div class="stat-label">Grade Alerts</div><div class="stat-value" id="edu-alerts">0</div><div class="stat-sub">Below 80 avg.</div></div>
+                <div class="stat-card" data-icon="📋" style="border-color:#27ae60;"><div class="stat-label">Report Cards In</div><div class="stat-value" id="edu-reportcards">0/0</div></div>
             </div>
 
             <!-- Finance stats -->
             <div class="stats-grid" data-roles="finance">
-                <div class="stat-card" data-icon="🏠" style="border-color:#1abc9c;"><div class="stat-label">Beneficiary Families</div><div class="stat-value">214</div></div>
-                <div class="stat-card" data-icon="💵" style="border-color:#27ae60;"><div class="stat-label">Stipends Disbursed</div><div class="stat-value">₱125k</div></div>
-                <div class="stat-card" data-icon="🧾" style="border-color:#e67e22;"><div class="stat-label">Pending Receipts</div><div class="stat-value">23</div></div>
+                <div class="stat-card" data-icon="🏠" style="border-color:#1abc9c;"><div class="stat-label">Beneficiary Families</div><div class="stat-value" id="fin-families">0</div></div>
+                <div class="stat-card" data-icon="💵" style="border-color:#27ae60;"><div class="stat-label">Stipends Disbursed</div><div class="stat-value" id="fin-stipends-dash">₱0</div></div>
+                <div class="stat-card" data-icon="🧾" style="border-color:#e67e22;"><div class="stat-label">Pending Receipts</div><div class="stat-value">0</div></div>
             </div>
 
             <!-- Program stats -->
             <div class="stats-grid" data-roles="program">
                 <div class="stat-card" data-icon="📥" style="border-color:#e67e22;"><div class="stat-label">New Applicants</div><div class="stat-value" id="prog-pending">0</div></div>
-                <div class="stat-card" data-icon="🕊️" style="border-color:#27ae60;"><div class="stat-label">Avg. Formation Attendance</div><div class="stat-value">94%</div></div>
-                <div class="stat-card" data-icon="🚨" style="border-color:#e74c3c;"><div class="stat-label">Absentee Alerts</div><div class="stat-value">6</div></div>
+                <div class="stat-card" data-icon="🕊️" style="border-color:#27ae60;"><div class="stat-label">Avg. Formation Attendance</div><div class="stat-value" id="prog-formation-avg">0%</div></div>
+                <div class="stat-card" data-icon="🚨" style="border-color:#e74c3c;"><div class="stat-label">Absentee Alerts</div><div class="stat-value" id="prog-absentee">0</div></div>
             </div>
 
             <!-- Charts -->
@@ -1184,31 +1184,12 @@
 ══════════════════════════════════════ */
 let currentRole = 'director';
 
-const DUMMY_DATA = [
-    { id: 1001, sy:'2025-2026', name:'Juan dela Cruz', barangay:'Poblacion', school:'Baliwag NHS', grade:'Grade 10', ambition:'Engineer', status:'Accepted', contact:'09171234567', date:'Jan 10, 2026', gender:'Male', age:16, dob:'2008-05-12', religion:'Catholic', birthplace:'Angat, Bulacan', address:'22 Narra St.', livingWith:'Both parents', eduLevel:'JuniorHigh', totalIncome:'8000', totalExpense:'7200', familyMembers:[{name:'Pedro dela Cruz',age:44,sex:'Male',relation:'Father',civil:'Married',educ:'High School',occup:'Carpenter',income:'8000'},{name:'Luz dela Cruz',age:42,sex:'Female',relation:'Mother',civil:'Married',educ:'Elem',occup:'Housewife',income:'0'}], properties:['Sariling Bahay','PHILHEALTH'] },
-    { id: 1002, sy:'2025-2026', name:'Maria Santos', barangay:'Marungko', school:'BulSU Main', grade:'1st Year', ambition:'Teacher', status:'Accepted', contact:'09182345678', date:'Jan 12, 2026', gender:'Female', age:18, dob:'2006-03-20', religion:'Catholic', birthplace:'Angat, Bulacan', address:'5 Sampaguita Ave.', livingWith:'Single parent', eduLevel:'College', degree:'BS Education', totalIncome:'6500', totalExpense:'6200', familyMembers:[{name:'Rosa Santos',age:40,sex:'Female',relation:'Mother',civil:'Single',educ:'High School',occup:'Labandera',income:'6500'}], properties:['4Ps Beneficiary','PHILHEALTH'] },
-    { id: 1003, sy:'2026-2027', name:'Jaycee Meneses', barangay:'Santa Lucia', school:'Baliwag Polytechnic College (BTECH)', grade:'3rd Year', ambition:'To live good', status:'Pending Review', contact:'09191234567', date:'Mar 22, 2026', gender:'Male', age:20, dob:'2005-10-23', religion:'Catholic', birthplace:'Angat, Bulacan', address:'123 Main St.', livingWith:'Both parents', eduLevel:'College', degree:'BS Information Technology', totalIncome:'10000', totalExpense:'9500', talents:'Coding', clubs:'Student Council', whyScholar:'To help my family have a better future.', familyMembers:[{name:'Juan Meneses',age:45,sex:'Male',relation:'Father',civil:'Married',educ:'High School',occup:'Driver',income:'10000'},{name:'Maria Meneses',age:43,sex:'Female',relation:'Mother',civil:'Married',educ:'College Level',occup:'Housewife',income:'0'}], properties:['Sariling Bahay','4Ps Beneficiary'] }
-];
-
 if (!localStorage.getItem('mefamdev_apps')) {
-    localStorage.setItem('mefamdev_apps', JSON.stringify(DUMMY_DATA));
+    localStorage.setItem('mefamdev_apps', JSON.stringify([]));
 }
 
-/* ── Seed 10 dummy beneficiary families ── */
-const DUMMY_FAMILIES = [
-    { id: 2001, surname: 'Dela Cruz',   guardian: 'Roberto Dela Cruz',   barangay: 'Poblacion',    contact: '09171112233', income: '8000',  bracket: 'Below Min.', benefits: 'PHILHEALTH, 4Ps' },
-    { id: 2002, surname: 'Santos',      guardian: 'Rosa Santos',          barangay: 'Marungko',     contact: '09182223344', income: '6500',  bracket: 'Below Min.', benefits: '4Ps, Solo Parent' },
-    { id: 2003, surname: 'Reyes',       guardian: 'Antonio Reyes',        barangay: 'Pulong Sampalok', contact: '09193334455', income: '11000', bracket: 'Near Min.', benefits: 'PHILHEALTH' },
-    { id: 2004, surname: 'Garcia',      guardian: 'Ligaya Garcia',        barangay: 'Banco',        contact: '09174445566', income: '9500',  bracket: 'Near Min.', benefits: '4Ps, PHILHEALTH' },
-    { id: 2005, surname: 'Mendoza',     guardian: 'Eduardo Mendoza',      barangay: 'Panasahan',    contact: '09185556677', income: '5800',  bracket: 'Below Min.', benefits: '4Ps, Solo Parent, PHILHEALTH' },
-    { id: 2006, surname: 'Torres',      guardian: 'Carmen Torres',        barangay: 'Sta. Lucia',   contact: '09196667788', income: '13500', bracket: 'At Min.',   benefits: 'PHILHEALTH' },
-    { id: 2007, surname: 'Flores',      guardian: 'Domingo Flores',       barangay: 'Dulong Malabon', contact: '09177778899', income: '7200',  bracket: 'Below Min.', benefits: '4Ps' },
-    { id: 2008, surname: 'Castillo',    guardian: 'Marites Castillo',     barangay: 'Locloc',       contact: '09188889900', income: '15000', bracket: 'At Min.',   benefits: 'PHILHEALTH, DSWD Beneficiary' },
-    { id: 2009, surname: 'Ramos',       guardian: 'Felix Ramos',          barangay: 'Tabang',       contact: '09199990011', income: '10200', bracket: 'Near Min.', benefits: '4Ps, PHILHEALTH' },
-    { id: 2010, surname: 'Villanueva',  guardian: 'Natividad Villanueva', barangay: 'Poblacion',    contact: '09170001122', income: '6000',  bracket: 'Below Min.', benefits: '4Ps, Solo Parent' },
-];
 if (!localStorage.getItem('mefamdev_families')) {
-    localStorage.setItem('mefamdev_families', JSON.stringify(DUMMY_FAMILIES));
+    localStorage.setItem('mefamdev_families', JSON.stringify([]));
 }
 
 /* ══════════════════════════════════════
@@ -1297,14 +1278,38 @@ function applyRBAC() {
 ══════════════════════════════════════ */
 function loadAllData() {
     const apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
+    const families = JSON.parse(localStorage.getItem('mefamdev_families')) || [];
     const scholars = apps.filter(a => a.status === 'Accepted');
     const pending = apps.filter(a => a.status === 'Pending Review' || a.status === 'Interviewing');
 
     // Update counters
     ['dash-scholars','edu-scholars'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = scholars.length; });
     ['dash-pending','prog-pending'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = pending.length; });
+    ['dash-families','fin-families'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = families.length; });
     const badge = document.getElementById('nav-badge');
     if (badge) badge.innerText = pending.length;
+
+    // Edu / program derived stats
+    const gradeAlerts = scholars.filter(s => savedGrades[s.id] !== undefined && savedGrades[s.id] < 80).length;
+    const eduAlertsEl = document.getElementById('edu-alerts');
+    if (eduAlertsEl) eduAlertsEl.innerText = gradeAlerts;
+    const reportCardsEl = document.getElementById('edu-reportcards');
+    if (reportCardsEl) reportCardsEl.innerText = `0/${scholars.length}`;
+
+    const events = JSON.parse(localStorage.getItem('mefamdev_events') || '[]');
+    const attData = JSON.parse(localStorage.getItem('mefamdev_event_attendance') || '{}');
+    let avgFormationPct = 0;
+    if (events.length > 0) {
+        const pcts = events.map(ev => ev.max > 0 ? ((attData[ev.id] || []).length / ev.max) * 100 : 0);
+        avgFormationPct = Math.round(pcts.reduce((a,b) => a+b, 0) / pcts.length);
+    }
+    const formAvgEl = document.getElementById('prog-formation-avg');
+    if (formAvgEl) formAvgEl.innerText = avgFormationPct + '%';
+
+    const absences = JSON.parse(localStorage.getItem('mefamdev_absences') || '{}');
+    const absentee = scholars.filter(s => (absences[s.id]?.days || 0) >= 3).length;
+    const absenteeEl = document.getElementById('prog-absentee');
+    if (absenteeEl) absenteeEl.innerText = absentee;
 
     renderRecentApps(apps);
     renderFullAppsTable(apps);
@@ -1541,14 +1546,16 @@ function renderGrades(scholars) {
     if (!tbody) return;
     if (scholars.length === 0) { tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No accepted scholars to display.</div></td></tr>`; return; }
     tbody.innerHTML = scholars.map(s => {
-        if (!savedGrades[s.id]) savedGrades[s.id] = Math.floor(Math.random() * (98 - 72 + 1)) + 72;
         const g = savedGrades[s.id];
-        const badge = g >= 80 ? `<span class="badge badge-green">Passed</span>` : `<span class="badge badge-red">Needs Intervention</span>`;
+        const hasGrade = g !== undefined;
+        const badge = !hasGrade
+            ? `<span class="badge badge-grey">No Data</span>`
+            : g >= 80 ? `<span class="badge badge-green">Passed</span>` : `<span class="badge badge-red">Needs Intervention</span>`;
         return `<tr>
             <td><strong>${s.name}</strong></td>
             <td>${s.school}</td>
             <td>${s.grade}</td>
-            <td id="grade-val-${s.id}">${g}</td>
+            <td id="grade-val-${s.id}">${hasGrade ? g : '—'}</td>
             <td>${badge}</td>
             <td><button class="btn btn-ghost btn-sm" onclick="openGradeModal(${s.id},'${s.name}')">Update</button></td>
         </tr>`;
@@ -1855,8 +1862,8 @@ function initCharts() {
         disbChart = new Chart(disbCtx, {
             type: 'line',
             data: {
-                labels: ['Jan','Feb','Mar','Apr','May','Jun'],
-                datasets: [{ label: 'Disbursed (₱)', data: [80000,95000,110000,125000,0,0], fill: true, backgroundColor: 'rgba(245,166,35,.12)', borderColor: '#f5a623', tension: .4, pointBackgroundColor: '#f5a623' }]
+                labels: [],
+                datasets: [{ label: 'Disbursed (₱)', data: [], fill: true, backgroundColor: 'rgba(245,166,35,.12)', borderColor: '#f5a623', tension: .4, pointBackgroundColor: '#f5a623' }]
             },
             options: { ...chartDefaults, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '₱' + (v/1000)+'k' } }, x: { grid: { display: false } } } }
         });
@@ -1877,6 +1884,21 @@ function updateCharts(apps) {
     apps.forEach(a => { const i = levelMap[a.eduLevel]; if (i !== undefined) eduCounts[i]++; });
     eduChart.data.datasets[0].data = eduCounts;
     eduChart.update();
+
+    // Disbursement chart: build from real fund log grouped by month
+    if (disbChart) {
+        const disbLog = JSON.parse(localStorage.getItem('mefamdev_disbursements') || '[]');
+        const byMonth = {};
+        disbLog.forEach(d => {
+            const dt = new Date(d.date);
+            const key = isNaN(dt) ? (d.date || 'Unknown') : dt.toLocaleDateString('en-PH', { month: 'short', year: '2-digit' });
+            byMonth[key] = (byMonth[key] || 0) + (parseFloat(d.amount) || 0);
+        });
+        const labels = Object.keys(byMonth);
+        disbChart.data.labels = labels;
+        disbChart.data.datasets[0].data = labels.map(l => byMonth[l]);
+        disbChart.update();
+    }
 }
 
 /* ══════════════════════════════════════
@@ -2222,10 +2244,14 @@ function renderFinancials() {
     const elDisbursed = document.getElementById('fin-disbursed');
     const elAdded     = document.getElementById('fin-added');
     const elScholars  = document.getElementById('fin-scholars');
+    const elDashBalance = document.getElementById('dash-balance');
+    const elFinStipendsDash = document.getElementById('fin-stipends-dash');
     if (elBalance)   elBalance.textContent   = fmt(balance);
     if (elDisbursed) elDisbursed.textContent = fmt(totalDisbursed);
     if (elAdded)     elAdded.textContent     = fmt(totalAdded);
     if (elScholars)  elScholars.textContent  = scholars.length;
+    if (elDashBalance) elDashBalance.textContent = fmt(balance);
+    if (elFinStipendsDash) elFinStipendsDash.textContent = fmt(totalDisbursed);
 
     // Populate scholar dropdown
     const sel = document.getElementById('disbScholar');
