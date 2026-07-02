@@ -64,6 +64,31 @@ router.patch('/:id', (req, res) => {
     if (req.body[key] !== undefined) { updates.push(`${key} = ?`); values.push(req.body[key]); }
   }
   if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+
+  const newStatus = req.body.status;
+  const app = db.prepare('SELECT * FROM applications WHERE id = ?').get(req.params.id);
+  if (!app) return res.status(404).json({ error: 'Not found' });
+
+  if (newStatus && newStatus.toLowerCase() === 'accepted') {
+    const familyMembers = JSON.parse(app.family_members || '[]');
+    const applicantName = app.name || '';
+    const lastName = applicantName.trim().split(/\s+/).slice(-1)[0] || 'Family';
+    const alreadyExists = db.prepare('SELECT id FROM families WHERE surname = ?').get(lastName);
+
+    if (!alreadyExists && familyMembers.length > 0) {
+      const guardianName = familyMembers.find(member => /father|mother|guardian/i.test(member.relation || ''))?.name || applicantName;
+      const contact = app.contact || '';
+      const barangay = app.barangay || '';
+      const income = app.total_income || '';
+      const benefits = (app.properties || []).join(', ') || '';
+
+      db.prepare(`
+        INSERT INTO families (surname, guardian, barangay, contact, income, bracket, benefits)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(lastName, guardianName, barangay, contact, income, '', benefits);
+    }
+  }
+
   values.push(req.params.id);
   db.prepare(`UPDATE applications SET ${updates.join(', ')} WHERE id = ?`).run(...values);
   res.json({ ok: true });
