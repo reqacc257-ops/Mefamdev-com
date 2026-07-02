@@ -10,8 +10,15 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const crypto = require('crypto');
 
-const DB_PATH = process.env.DB_PATH || path.join(__dirname, 'mefamdev.db');
-const db = new Database(DB_PATH);
+const fs = require('fs');
+
+const DB_PATH = process.env.DB_PATH || process.env.DATABASE_URL || path.join(__dirname, 'mefamdev.db');
+const resolvedDbPath = DB_PATH.startsWith('file:') ? DB_PATH.replace('file:', '') : DB_PATH;
+const dbDir = path.dirname(resolvedDbPath);
+if (dbDir && !fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+const db = new Database(resolvedDbPath);
 
 // Enable WAL mode for better concurrent performance
 db.pragma('journal_mode = WAL');
@@ -193,40 +200,6 @@ const insertStaff = db.prepare(`
 
 for (const s of seedStaff) {
   insertStaff.run({ ...s, password: hashPassword(s.password) });
-}
-
-// ── Seed dummy applications if empty ─────────────────────────────────────────
-const appCount = db.prepare('SELECT COUNT(*) as c FROM applications').get();
-if (appCount.c === 0) {
-  const ins = db.prepare(`
-    INSERT INTO applications (id, sy, name, barangay, school, grade, ambition, status,
-      contact, date_label, gender, age, dob, religion, birthplace, address,
-      living_with, edu_level, total_income, total_expense, family_members, properties)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-  ins.run(1001,'2025-2026','Juan dela Cruz','Poblacion','Baliwag NHS','Grade 10','Engineer','Accepted','09171234567','Jan 10, 2026','Male',16,'2008-05-12','Catholic','Angat, Bulacan','22 Narra St.','Both parents','JuniorHigh','8000','7200',JSON.stringify([{name:'Pedro dela Cruz',age:44,sex:'Male',relation:'Father',civil:'Married',educ:'High School',occup:'Carpenter',income:'8000'},{name:'Luz dela Cruz',age:42,sex:'Female',relation:'Mother',civil:'Married',educ:'Elem',occup:'Housewife',income:'0'}]),JSON.stringify(['Sariling Bahay','PHILHEALTH']));
-  ins.run(1002,'2025-2026','Maria Santos','Marungko','BulSU Main','1st Year','Teacher','Accepted','09182345678','Jan 12, 2026','Female',18,'2006-03-20','Catholic','Angat, Bulacan','5 Sampaguita Ave.','Single parent','College','6500','6200',JSON.stringify([{name:'Rosa Santos',age:40,sex:'Female',relation:'Mother',civil:'Single',educ:'High School',occup:'Labandera',income:'6500'}]),JSON.stringify(['4Ps Beneficiary','PHILHEALTH']));
-  ins.run(1003,'2026-2027','Jaycee Meneses','Santa Lucia','Baliwag Polytechnic College (BTECH)','3rd Year','To live good','Pending Review','09191234567','Mar 22, 2026','Male',20,'2005-10-23','Catholic','Angat, Bulacan','123 Main St.','Both parents','College','10000','9500',JSON.stringify([{name:'Juan Meneses',age:45,sex:'Male',relation:'Father',civil:'Married',educ:'High School',occup:'Driver',income:'10000'},{name:'Maria Meneses',age:43,sex:'Female',relation:'Mother',civil:'Married',educ:'College Level',occup:'Housewife',income:'0'}]),JSON.stringify(['Sariling Bahay','4Ps Beneficiary']));
-  // Reset autoincrement past seeds
-  db.prepare("UPDATE sqlite_sequence SET seq=1003 WHERE name='applications'").run();
-}
-
-// ── Seed dummy families if empty ─────────────────────────────────────────────
-const famCount = db.prepare('SELECT COUNT(*) as c FROM families').get();
-if (famCount.c === 0) {
-  const insF = db.prepare(`INSERT INTO families (surname,guardian,barangay,contact,income,bracket,benefits) VALUES (?,?,?,?,?,?,?)`);
-  [
-    ['Dela Cruz','Roberto Dela Cruz','Poblacion','09171112233','8000','Below Min.','PHILHEALTH, 4Ps'],
-    ['Santos','Rosa Santos','Marungko','09182223344','6500','Below Min.','4Ps, Solo Parent'],
-    ['Reyes','Antonio Reyes','Pulong Sampalok','09193334455','11000','Near Min.','PHILHEALTH'],
-    ['Garcia','Ligaya Garcia','Banco','09174445566','9500','Near Min.','4Ps, PHILHEALTH'],
-    ['Mendoza','Eduardo Mendoza','Panasahan','09185556677','5800','Below Min.','4Ps, Solo Parent, PHILHEALTH'],
-    ['Torres','Carmen Torres','Sta. Lucia','09196667788','13500','At Min.','PHILHEALTH'],
-    ['Flores','Domingo Flores','Dulong Malabon','09177778899','7200','Below Min.','4Ps'],
-    ['Castillo','Marites Castillo','Locloc','09188889900','15000','At Min.','PHILHEALTH, DSWD Beneficiary'],
-    ['Ramos','Felix Ramos','Tabang','09199990011','10200','Near Min.','4Ps, PHILHEALTH'],
-    ['Villanueva','Natividad Villanueva','Poblacion','09170001122','6000','Below Min.','4Ps, Solo Parent'],
-  ].forEach(r => insF.run(...r));
 }
 
 module.exports = db;
