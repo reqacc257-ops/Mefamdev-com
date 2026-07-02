@@ -1178,11 +1178,13 @@
     </div>
 </div>
 
+<script src="/mefamdev-api.js"></script>
 <script>
 /* ══════════════════════════════════════
    CORE STATE
 ══════════════════════════════════════ */
 let currentRole = 'director';
+let savedGrades = {};
 
 if (!localStorage.getItem('mefamdev_apps')) {
     localStorage.setItem('mefamdev_apps', JSON.stringify([]));
@@ -1216,10 +1218,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     applyRBAC();
-    loadAllData();
     initCharts();
-    renderAnnouncements();
-    setInterval(loadAllData, 5000);
+    loadAllData();
+    setInterval(() => { loadAllData(); }, 5000);
 
     // Close role dropdown on outside click
     document.addEventListener('click', e => {
@@ -1276,54 +1277,96 @@ function applyRBAC() {
 /* ══════════════════════════════════════
    DATA LOADING
 ══════════════════════════════════════ */
-function loadAllData() {
-    const apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
-    const families = JSON.parse(localStorage.getItem('mefamdev_families')) || [];
-    const scholars = apps.filter(a => a.status === 'Accepted');
-    const pending = apps.filter(a => a.status === 'Pending Review' || a.status === 'Interviewing');
+async function loadAllData() {
+    try {
+        const [apps, families, announcements, events, fundLog, disbLog, intakeSheets, assessments, absences, grades] = await Promise.all([
+            MefamAPI.getApplications(),
+            MefamAPI.getFamilies(),
+            MefamAPI.getAnnouncements(),
+            MefamAPI.getEvents(),
+            MefamAPI.getFundLog(),
+            MefamAPI.getDisbursements(),
+            MefamAPI.getIntakeSheets(),
+            MefamAPI.getAssessments(),
+            MefamAPI.getAbsences(),
+            MefamAPI.getGrades(),
+        ]);
 
-    // Update counters
-    ['dash-scholars','edu-scholars'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = scholars.length; });
-    ['dash-pending','prog-pending'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = pending.length; });
-    ['dash-families','fin-families'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = families.length; });
-    const badge = document.getElementById('nav-badge');
-    if (badge) badge.innerText = pending.length;
+        const appList = Array.isArray(apps) ? apps : [];
+        const familyList = Array.isArray(families) ? families : [];
+        const announcementList = Array.isArray(announcements) ? announcements : [];
+        const eventList = Array.isArray(events) ? events : [];
+        const fundLogList = Array.isArray(fundLog) ? fundLog : [];
+        const disbLogList = Array.isArray(disbLog) ? disbLog : [];
+        const intakeList = Array.isArray(intakeSheets) ? intakeSheets : [];
+        const assessmentList = Array.isArray(assessments) ? assessments : [];
 
-    // Edu / program derived stats
-    const gradeAlerts = scholars.filter(s => savedGrades[s.id] !== undefined && savedGrades[s.id] < 80).length;
-    const eduAlertsEl = document.getElementById('edu-alerts');
-    if (eduAlertsEl) eduAlertsEl.innerText = gradeAlerts;
-    const reportCardsEl = document.getElementById('edu-reportcards');
-    if (reportCardsEl) reportCardsEl.innerText = `0/${scholars.length}`;
+        localStorage.setItem('mefamdev_apps', JSON.stringify(appList));
+        localStorage.setItem('mefamdev_families', JSON.stringify(familyList));
+        localStorage.setItem('mefamdev_announcements', JSON.stringify(announcementList));
+        localStorage.setItem('mefamdev_events', JSON.stringify(eventList.map(ev => ({ id: ev.id, name: ev.name, date: ev.date, venue: ev.venue, max: ev.max_att || ev.max || 75 }))));
+        localStorage.setItem('mefamdev_event_attendance', JSON.stringify(Object.fromEntries(eventList.map(ev => [ev.id, ev.attendees || []]))));
+        localStorage.setItem('mefamdev_fund_log', JSON.stringify(fundLogList));
+        localStorage.setItem('mefamdev_disbursements', JSON.stringify(disbLogList));
+        localStorage.setItem('mefamdev_intake_sheets', JSON.stringify(intakeList));
+        localStorage.setItem('mefamdev_assessments', JSON.stringify(assessmentList));
 
-    const events = JSON.parse(localStorage.getItem('mefamdev_events') || '[]');
-    const attData = JSON.parse(localStorage.getItem('mefamdev_event_attendance') || '{}');
-    let avgFormationPct = 0;
-    if (events.length > 0) {
-        const pcts = events.map(ev => ev.max > 0 ? ((attData[ev.id] || []).length / ev.max) * 100 : 0);
-        avgFormationPct = Math.round(pcts.reduce((a,b) => a+b, 0) / pcts.length);
+        const absencesMap = {};
+        (Array.isArray(absences) ? absences : []).forEach(row => {
+            absencesMap[row.app_id || row.appId] = { days: Number(row.days || 0), reason: row.reason || '' };
+        });
+        localStorage.setItem('mefamdev_absences', JSON.stringify(absencesMap));
+
+        savedGrades = {};
+        (Array.isArray(grades) ? grades : []).forEach(row => {
+            savedGrades[row.app_id || row.appId] = Number(row.grade_val || row.grade || 0);
+        });
+
+        const scholars = appList.filter(a => a.status === 'Accepted');
+        const pending = appList.filter(a => a.status === 'Pending Review' || a.status === 'Interviewing');
+
+        ['dash-scholars','edu-scholars'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = scholars.length; });
+        ['dash-pending','prog-pending'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = pending.length; });
+        ['dash-families','fin-families'].forEach(id => { const el = document.getElementById(id); if(el) el.innerText = familyList.length; });
+        const badge = document.getElementById('nav-badge');
+        if (badge) badge.innerText = pending.length;
+
+        const gradeAlerts = scholars.filter(s => savedGrades[s.id] !== undefined && savedGrades[s.id] < 80).length;
+        const eduAlertsEl = document.getElementById('edu-alerts');
+        if (eduAlertsEl) eduAlertsEl.innerText = gradeAlerts;
+        const reportCardsEl = document.getElementById('edu-reportcards');
+        if (reportCardsEl) reportCardsEl.innerText = `0/${scholars.length}`;
+
+        const attData = JSON.parse(localStorage.getItem('mefamdev_event_attendance') || '{}');
+        let avgFormationPct = 0;
+        if (eventList.length > 0) {
+            const pcts = eventList.map(ev => (ev.max_att || ev.max || 75) > 0 ? ((attData[ev.id] || []).length / (ev.max_att || ev.max || 75)) * 100 : 0);
+            avgFormationPct = Math.round(pcts.reduce((a,b) => a+b, 0) / pcts.length);
+        }
+        const formAvgEl = document.getElementById('prog-formation-avg');
+        if (formAvgEl) formAvgEl.innerText = avgFormationPct + '%';
+
+        const absencesMap2 = JSON.parse(localStorage.getItem('mefamdev_absences') || '{}');
+        const absentee = scholars.filter(s => (absencesMap2[s.id]?.days || 0) >= 3).length;
+        const absenteeEl = document.getElementById('prog-absentee');
+        if (absenteeEl) absenteeEl.innerText = absentee;
+
+        renderRecentApps(appList);
+        renderFullAppsTable(appList);
+        renderPipeline(appList);
+        renderProfiles(scholars);
+        renderGrades(scholars);
+        populatePendingSelect(appList);
+        updateCharts(appList);
+        loadSavedRecords();
+        renderEvents();
+        renderAttendance(scholars);
+        renderFamilies();
+        renderFinancials();
+        renderAnnouncements();
+    } catch (error) {
+        console.error('Failed to load dashboard data:', error);
     }
-    const formAvgEl = document.getElementById('prog-formation-avg');
-    if (formAvgEl) formAvgEl.innerText = avgFormationPct + '%';
-
-    const absences = JSON.parse(localStorage.getItem('mefamdev_absences') || '{}');
-    const absentee = scholars.filter(s => (absences[s.id]?.days || 0) >= 3).length;
-    const absenteeEl = document.getElementById('prog-absentee');
-    if (absenteeEl) absenteeEl.innerText = absentee;
-
-    renderRecentApps(apps);
-    renderFullAppsTable(apps);
-    renderPipeline(apps);
-    renderProfiles(scholars);
-    renderGrades(scholars);
-    populatePendingSelect(apps);
-    updateCharts(apps);
-    loadSavedRecords();
-    renderEvents();
-    renderAttendance(scholars);
-    renderFamilies();
-    renderFinancials();
-    renderAnnouncements();
 }
 
 /* ── Saved Records (Intake Sheets + Assessments) ── */
@@ -1685,32 +1728,25 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 /* ══════════════════════════════════════
    STATUS CHANGE & DELETE
 ══════════════════════════════════════ */
-function changeStatus(id, status) {
-    let apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
-    const i = apps.findIndex(a => a.id === id);
-    if (i > -1) {
-        const previousStatus = apps[i].status;
-        apps[i].status = status;
-        apps[i].statusUpdatedAt = new Date().toISOString();
-        apps[i].statusHistory = apps[i].statusHistory || [];
-        if (previousStatus !== status) {
-            apps[i].statusHistory.push({
-                status,
-                changedAt: apps[i].statusUpdatedAt,
-                note: status === 'Accepted' ? 'Accepted by staff.' : status === 'Rejected' ? 'Rejected by staff.' : 'Status updated by staff.'
-            });
-        }
-        localStorage.setItem('mefamdev_apps', JSON.stringify(apps));
-        loadAllData();
+async function changeStatus(id, status) {
+    try {
+        await MefamAPI.updateApplication(id, { status });
+        await loadAllData();
+    } catch (error) {
+        console.error('Failed to update status:', error);
+        alert('Unable to update the application status right now.');
     }
 }
 
-function deleteApp(id) {
+async function deleteApp(id) {
     if (!confirm('Permanently delete this application?')) return;
-    let apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
-    apps = apps.filter(a => a.id !== id);
-    localStorage.setItem('mefamdev_apps', JSON.stringify(apps));
-    loadAllData();
+    try {
+        await MefamAPI.deleteApplication(id);
+        await loadAllData();
+    } catch (error) {
+        console.error('Failed to delete application:', error);
+        alert('Unable to delete the application right now.');
+    }
 }
 
 function adminLogout() {
@@ -1750,7 +1786,7 @@ function clearAllData() {
 /* ══════════════════════════════════════
    ANNOUNCEMENTS
 ══════════════════════════════════════ */
-function sendAnnouncement() {
+async function sendAnnouncement() {
     const subject = document.getElementById('annSubject').value.trim();
     const message = document.getElementById('annMessage').value.trim();
     const target  = document.getElementById('annTarget').value;
@@ -1759,36 +1795,27 @@ function sendAnnouncement() {
     if (!subject) { alert('Please enter a subject/title for the announcement.'); return; }
     if (!message) { alert('Please enter a message body.'); return; }
 
-    const anns = JSON.parse(localStorage.getItem('mefamdev_announcements') || '[]');
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-PH', { year:'numeric', month:'short', day:'numeric' });
-
-    anns.unshift({
-        id: Date.now(),
-        subject,
-        message,
-        target,
-        tag,
-        date: dateStr,
-        postedBy: document.getElementById('user-name')?.innerText || 'Admin'
-    });
-
-    localStorage.setItem('mefamdev_announcements', JSON.stringify(anns));
-
-    // Clear form
-    document.getElementById('annSubject').value = '';
-    document.getElementById('annMessage').value = '';
-
-    renderAnnouncements();
-    alert('Announcement posted! Students can now see it on their portal.');
+    try {
+        await MefamAPI.postAnnouncement(subject, message, target, tag);
+        document.getElementById('annSubject').value = '';
+        document.getElementById('annMessage').value = '';
+        await loadAllData();
+        alert('Announcement posted! Students can now see it on their portal.');
+    } catch (error) {
+        console.error('Failed to post announcement:', error);
+        alert('Unable to post the announcement right now.');
+    }
 }
 
-function deleteAnnouncement(id) {
+async function deleteAnnouncement(id) {
     if (!confirm('Delete this announcement?')) return;
-    let anns = JSON.parse(localStorage.getItem('mefamdev_announcements') || '[]');
-    anns = anns.filter(a => a.id !== id);
-    localStorage.setItem('mefamdev_announcements', JSON.stringify(anns));
-    renderAnnouncements();
+    try {
+        await MefamAPI.deleteAnnouncement(id);
+        await loadAllData();
+    } catch (error) {
+        console.error('Failed to delete announcement:', error);
+        alert('Unable to delete the announcement right now.');
+    }
 }
 
 function renderAnnouncements() {
@@ -2228,33 +2255,38 @@ function openAddFamilyModal() {
     document.getElementById('familyModal').classList.add('open');
 }
 
-function saveFamily() {
+async function saveFamily() {
     const surname = document.getElementById('fm-surname').value.trim();
     if (!surname) { alert('Please enter a family surname.'); return; }
-    const families = JSON.parse(localStorage.getItem('mefamdev_families') || '[]');
-    families.push({
-        id: Date.now(),
-        surname,
-        guardian: document.getElementById('fm-guardian').value.trim(),
-        barangay: document.getElementById('fm-barangay').value.trim(),
-        contact: document.getElementById('fm-contact').value.trim(),
-        income: document.getElementById('fm-income').value,
-        bracket: document.getElementById('fm-bracket').value,
-        benefits: document.getElementById('fm-benefits').value.trim(),
-    });
-    localStorage.setItem('mefamdev_families', JSON.stringify(families));
-    closeModal('familyModal');
-    renderFamilies();
+    try {
+        await MefamAPI.addFamily({
+            surname,
+            guardian: document.getElementById('fm-guardian').value.trim(),
+            barangay: document.getElementById('fm-barangay').value.trim(),
+            contact: document.getElementById('fm-contact').value.trim(),
+            income: document.getElementById('fm-income').value,
+            bracket: document.getElementById('fm-bracket').value,
+            benefits: document.getElementById('fm-benefits').value.trim(),
+        });
+        closeModal('familyModal');
+        await loadAllData();
+    } catch (error) {
+        console.error('Failed to save family:', error);
+        alert('Unable to save the family record right now.');
+    }
 }
 
-function deleteFamily(id) {
+async function deleteFamily(id) {
     if (!confirm('Remove this family?')) return;
-    let families = JSON.parse(localStorage.getItem('mefamdev_families') || '[]');
-    families = families.filter(f => f.id !== id);
-    localStorage.setItem('mefamdev_families', JSON.stringify(families));
-    document.getElementById('family-detail').style.display = 'none';
-    document.getElementById('family-empty-state').style.display = 'flex';
-    renderFamilies();
+    try {
+        await MefamAPI.deleteFamily(id);
+        document.getElementById('family-detail').style.display = 'none';
+        document.getElementById('family-empty-state').style.display = 'flex';
+        await loadAllData();
+    } catch (error) {
+        console.error('Failed to delete family:', error);
+        alert('Unable to remove the family record right now.');
+    }
 }
 
 /* ══════════════════════════════════════
