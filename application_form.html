@@ -983,6 +983,22 @@
         return false;
     }
 
+    function collectSubmittedFields() {
+        const payload = {};
+        document.querySelectorAll('#scholarForm input, #scholarForm select, #scholarForm textarea').forEach(el => {
+            if (!el.id || ['submit', 'button', 'captchaInput'].includes(el.id)) return;
+            if (el.type === 'checkbox' || el.type === 'radio') {
+                if (el.checked) {
+                    if (!payload[el.id]) payload[el.id] = [];
+                    payload[el.id].push(el.value || 'checked');
+                }
+            } else if (el.type !== 'file') {
+                payload[el.id] = el.value;
+            }
+        });
+        return payload;
+    }
+
     /* ── Form Submit ── */
     document.getElementById('scholarForm').addEventListener('submit', function (e) {
         e.preventDefault();
@@ -1022,6 +1038,8 @@
         let canProvide = [];
         document.querySelectorAll('#page-4 .check-grid input[type="checkbox"]:checked').forEach(c => canProvide.push(c.value));
 
+        const submittedData = collectSubmittedFields();
+        const now = new Date();
         const data = {
             id: Date.now(),
             sy: document.getElementById('sySelect').value,
@@ -1050,8 +1068,12 @@
             whyScholar: document.getElementById('whyScholar').value,
             totalIncome: document.getElementById('totalIncome').innerText,
             totalExpense: document.getElementById('totalExpense').innerText,
+            submittedData,
+            submittedAt: now.toISOString(),
             status: 'Pending Review',
-            date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+            statusUpdatedAt: now.toISOString(),
+            statusHistory: [{ status: 'Pending Review', changedAt: now.toISOString(), note: 'Application submitted' }],
+            date: now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
         };
 
         const apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
