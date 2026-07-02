@@ -370,6 +370,7 @@
     </div><!-- /portalContent -->
 </div><!-- /main -->
 
+<script src="/mefamdev-api.js"></script>
 <script>
 window.addEventListener('storage', function (e) {
     if (e.key !== 'mefamdev_apps' && e.key !== 'mefamdev_announcements') return;
@@ -378,14 +379,11 @@ window.addEventListener('storage', function (e) {
     let session;
     try { session = JSON.parse(raw); } catch (err) { return; }
     if (session.type !== 'applicant' || !session.appId) return;
-    const apps = JSON.parse(localStorage.getItem('mefamdev_apps') || '[]');
-    const app = apps.find(a => a.id === session.appId || String(a.id) === String(session.appId));
-    if (app) renderPortal(app, session);
+    loadApplicantData(session);
 });
 
 /* ── Session check ── */
 window.onload = function () {
-    // Support admin preview: admin passes a temporary session via localStorage
     const isPreview = new URLSearchParams(window.location.search).get('preview') === '1';
     let raw = sessionStorage.getItem('mefamdev_session');
 
@@ -393,7 +391,7 @@ window.onload = function () {
         const previewRaw = localStorage.getItem('mefamdev_preview_session');
         if (previewRaw) {
             raw = previewRaw;
-            localStorage.removeItem('mefamdev_preview_session'); // consume once
+            localStorage.removeItem('mefamdev_preview_session');
         }
     }
 
@@ -404,24 +402,31 @@ window.onload = function () {
 
     if (session.type !== 'applicant' || !session.appId) { showNotFound(); return; }
 
-    // Load application data
-    const apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
-    const app = apps.find(a => a.id === session.appId || String(a.id) === String(session.appId));
-
-    if (!app) { showNotFound(); return; }
-
-    // Show admin preview banner
-    if (session.isAdminPreview) {
-        const banner = document.createElement('div');
-        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f5a623;color:#1a2e44;text-align:center;padding:8px 16px;font-size:.82rem;font-weight:700;font-family:DM Sans,sans-serif;';
-        banner.innerHTML = '&#128274; ADMIN PREVIEW — Viewing as applicant: ' + app.name + ' (APP-' + app.id + ') &nbsp;|&nbsp; <a href="admin_dashboard.html" style="color:#1a2e44;text-decoration:underline;">&#8592; Back to Dashboard</a>';
-        document.body.prepend(banner);
-    }
-
-    // Populate UI
-    renderPortal(app, session);
-    document.getElementById('portalContent').style.display = 'block';
+    loadApplicantData(session);
 };
+
+async function loadApplicantData(session) {
+    try {
+        const app = await MefamAPI.getApplication(session.appId);
+        if (!app) { showNotFound(); return; }
+
+        if (session.isAdminPreview) {
+            const banner = document.createElement('div');
+            banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#f5a623;color:#1a2e44;text-align:center;padding:8px 16px;font-size:.82rem;font-weight:700;font-family:DM Sans,sans-serif;';
+            banner.innerHTML = '&#128274; ADMIN PREVIEW — Viewing as applicant: ' + app.name + ' (APP-' + app.id + ') &nbsp;|&nbsp; <a href="admin_dashboard.html" style="color:#1a2e44;text-decoration:underline;">&#8592; Back to Dashboard</a>';
+            if (!document.querySelector('div[style*="position:fixed;top:0;left:0;right:0;z-index:9999"]')) {
+                document.body.prepend(banner);
+            }
+        }
+
+        renderPortal(app, session);
+        document.getElementById('portalContent').style.display = 'block';
+        document.getElementById('notFoundView').style.display = 'none';
+    } catch (error) {
+        console.error('Failed to load applicant data:', error);
+        showNotFound();
+    }
+}
 
 function showNotFound() {
     document.getElementById('notFoundView').style.display = 'block';
@@ -535,25 +540,30 @@ function buildTimeline(app) {
     return events;
 }
 
-function renderAnnouncements() {
+async function renderAnnouncements() {
     const container = document.getElementById('annPortalList');
     if (!container) return;
-    const anns = JSON.parse(localStorage.getItem('mefamdev_announcements') || '[]');
-    if (anns.length === 0) {
-        container.innerHTML = `
-            <div style="text-align:center; padding:24px 0; color:var(--muted); font-size:.87rem;">
-                <div style="font-size:2rem; margin-bottom:8px;">📭</div>
-                <p>No announcements at this time. Check back soon.</p>
-            </div>`;
-        return;
+    try {
+        const anns = await MefamAPI.getAnnouncements();
+        if (!Array.isArray(anns) || anns.length === 0) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:24px 0; color:var(--muted); font-size:.87rem;">
+                    <div style="font-size:2rem; margin-bottom:8px;">📭</div>
+                    <p>No announcements at this time. Check back soon.</p>
+                </div>`;
+            return;
+        }
+        container.innerHTML = anns.map(a => `
+            <div class="ann-item">
+                <div class="ann-tag">${a.tag || ''}</div>
+                <div class="ann-title">${a.subject || ''}</div>
+                <div class="ann-body">${a.message || ''}</div>
+                <div class="ann-date">Posted: ${a.date || ''}</div>
+            </div>`).join('');
+    } catch (error) {
+        console.error('Failed to load announcements:', error);
+        container.innerHTML = '<div style="padding:16px 0;color:var(--muted);font-size:.87rem;">Unable to load announcements right now.</div>';
     }
-    container.innerHTML = anns.map(a => `
-        <div class="ann-item">
-            <div class="ann-tag">${a.tag || ''}</div>
-            <div class="ann-title">${a.subject || ''}</div>
-            <div class="ann-body">${a.message || ''}</div>
-            <div class="ann-date">Posted: ${a.date || ''}</div>
-        </div>`).join('');
 }
 
 function logout() {
