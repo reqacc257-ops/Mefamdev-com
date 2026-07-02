@@ -1,11 +1,3 @@
-/**
- * MEFAMDEV-Life Backend Server
- * Node.js + Express + SQLite (better-sqlite3)
- *
- * Run:  node server.js
- * Default port: 3000
- */
-
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -23,32 +15,35 @@ const { requireAuth } = require('./middleware/auth');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Middleware ────────────────────────────────────────
+// Middleware
 app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json({ limit: '5mb' }));
 
-// Serve your HTML files from /public (copy your 6 HTML files here)
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve static files from the workspace root
+app.use(express.static(path.join(__dirname)));
 
-// ── Routes ────────────────────────────────────────────
-app.use('/api/auth',        authRouter);
+// Routes
+app.use('/api/auth', authRouter);
 app.use('/api/applications', requireAuth, appsRouter);
-app.use('/api/families',     requireAuth, familiesRouter);
-app.use('/api/events',       requireAuth, eventsRouter);
-app.use('/api/financials',   requireAuth, financialsRouter);
-app.use('/api/records',      requireAuth, recordsRouter);
-app.use('/api/comms',        requireAuth, commsRouter);
+app.use('/api/families', requireAuth, familiesRouter);
+app.use('/api/events', requireAuth, eventsRouter);
+app.use('/api/financials', requireAuth, financialsRouter);
+app.use('/api/records', requireAuth, recordsRouter);
+app.use('/api/comms', requireAuth, commsRouter);
 
-// Public: submit application (no auth — anyone can apply)
+// Public submit route
 const { submitPublicApplication } = require('./routes/applications');
 app.post('/api/public/apply', submitPublicApplication);
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ ok: true, time: new Date().toISOString() }));
 
-// ── Start ─────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n✅  MEFAMDEV Server running at http://localhost:${PORT}`);
-  console.log(`    API base:  http://localhost:${PORT}/api`);
-  console.log(`    Dashboard: http://localhost:${PORT}/admin_dashboard.html\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n✅ MEFAMDEV Server running at http://localhost:${PORT}`);
+    console.log(`    API base: http://localhost:${PORT}/api`);
+    console.log(`    Dashboard: http://localhost:${PORT}/admin_dashboard.html\n`);
+  });
+}
+
+module.exports = app;
