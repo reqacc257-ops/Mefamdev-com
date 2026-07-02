@@ -1613,6 +1613,23 @@ function viewApp(id) {
         ? a.properties.map(p=>`<span class="badge badge-blue" style="margin:2px;">${p}</span>`).join(' ')
         : '<span style="color:#aaa;font-size:.85rem;">None listed.</span>';
 
+    const formatValue = (value) => {
+        if (Array.isArray(value)) return value.join(', ');
+        if (value === null || value === undefined || value === '') return '—';
+        return String(value);
+    };
+    const submittedEntries = Object.entries(a.submittedData || {}).filter(([key, value]) => {
+        if (!value || (Array.isArray(value) && value.length === 0)) return false;
+        return !['captchaInput', 'submitBtn', 'scholarForm'].includes(key);
+    });
+    const submittedHTML = submittedEntries.length > 0
+        ? `<div class="modal-section" style="margin-top:16px;">Submitted Form Details</div>
+           <div style="display:grid;grid-template-columns:minmax(140px,220px) 1fr;gap:8px 12px;max-height:240px;overflow:auto;">${submittedEntries.map(([key, value]) => `
+               <div style="font-size:.78rem;color:#6b7280;font-weight:700;text-transform:capitalize;">${key.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())}</div>
+               <div style="font-size:.82rem;color:#334155;">${formatValue(value)}</div>`).join('')}
+           </div>`
+        : '<p style="color:#aaa;font-size:.85rem;">No additional form data captured.</p>';
+
     document.getElementById('appModalContent').innerHTML = `
         <div class="grid-2eq" style="gap:20px;">
             <div>
@@ -1651,11 +1668,13 @@ function viewApp(id) {
                 <div class="modal-section">Why Scholar</div>
                 <p style="color:#555; font-style:italic;">"${a.whyScholar||'No statement provided.'}"</p>
             </div>
-        </div>`;
+        </div>
+        ${submittedHTML}`;
 
     let footerHTML = `<button class="btn btn-ghost" onclick="closeModal('appModal')">Close</button>`;
     if (a.status === 'Pending Review') footerHTML += `<button class="btn btn-orange" onclick="changeStatus(${a.id},'Interviewing'); closeModal('appModal')">Move to Interview</button>`;
     if (a.status !== 'Accepted') footerHTML += `<button class="btn btn-green" onclick="changeStatus(${a.id},'Accepted'); closeModal('appModal')">✓ Accept Scholar</button>`;
+    if (a.status !== 'Rejected') footerHTML += `<button class="btn btn-red" onclick="changeStatus(${a.id},'Rejected'); closeModal('appModal')">✕ Reject Application</button>`;
 
     document.getElementById('appModalFooter').innerHTML = footerHTML;
     document.getElementById('appModal').classList.add('open');
@@ -1669,7 +1688,21 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 function changeStatus(id, status) {
     let apps = JSON.parse(localStorage.getItem('mefamdev_apps')) || [];
     const i = apps.findIndex(a => a.id === id);
-    if (i > -1) { apps[i].status = status; localStorage.setItem('mefamdev_apps', JSON.stringify(apps)); loadAllData(); }
+    if (i > -1) {
+        const previousStatus = apps[i].status;
+        apps[i].status = status;
+        apps[i].statusUpdatedAt = new Date().toISOString();
+        apps[i].statusHistory = apps[i].statusHistory || [];
+        if (previousStatus !== status) {
+            apps[i].statusHistory.push({
+                status,
+                changedAt: apps[i].statusUpdatedAt,
+                note: status === 'Accepted' ? 'Accepted by staff.' : status === 'Rejected' ? 'Rejected by staff.' : 'Status updated by staff.'
+            });
+        }
+        localStorage.setItem('mefamdev_apps', JSON.stringify(apps));
+        loadAllData();
+    }
 }
 
 function deleteApp(id) {
